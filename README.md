@@ -308,3 +308,77 @@ Bu normal; yeni migration yok demektir. Yeni SQL dosyası ekledikten sonra `make
 
 ## Yol Haritası
 
+Aşağıdaki adımlar; ekip büyüdükçe **sürdürülebilir geliştirme**, **güvenli teslimat** ve **kolay bakım** için yol haritamızdır. Her kalem bağımsız PR’lara bölünebilir.
+
+### 1) CI/CD ve Kalite Boru Hattı
+
+* **GitHub Actions**: build + test (JUnit5), **Testcontainers** ile entegrasyon testleri.
+* **Artifact’lar**: `logistics-api.jar` ve **Docker image** (GHCR: `ghcr.io/<org>/logistics-api`).
+* **Bağımlılık taraması**: Dependabot + (opsiyonel) OWASP Dependency-Check/Snyk.
+* **Kod kalitesi**: Spotless (format), Checkstyle/PMD; (ops.) SonarQube.
+* **Örnek workflow** (ileride eklenecek): `.github/workflows/ci.yml` → `mvn -B -DskipTests=false verify`, image build & push.
+
+### 2) Uygulamanın Containerize Edilmesi
+
+* **Multi-stage Dockerfile**: Temel `eclipse-temurin:21-jdk` → run stage `jre-slim`.
+* **Güvenlik**: non-root kullanıcı, sadece gerekli portlar, küçük imaj.
+* **Compose genişletme**: `app` servisi (8080) + `db` + `flyway` aynı ağda; `.env` ile yapılandırma.
+
+### 3) Ortamlar ve Yapılandırma Yönetimi
+
+* **Spring profilleri**: `local`, `test`, `prod` → `application-*.properties`.
+* **Sırlar**: `ops/.env` sadece lokal; prod için **Vault/Secrets Manager** (Git’e girmeyecek).
+* **Flyway stratejisi**: baseline/out-of-order politikası, repeatable migration kuralları (R\_\_\*.sql) dokümante edilecek.
+
+### 4) API Tasarımı ve Dokümantasyon
+
+* **OpenAPI/Swagger**: `springdoc-openapi-starter-webmvc-ui` → `/swagger-ui.html` & `/v3/api-docs`.
+* **Versiyonlama**: URI tabanlı (`/api/v1/...`).
+* **Hata formatı**: RFC7807 `application/problem+json` (ControllerAdvice ile).
+* **Tutarlılık**: ISO-8601 tarih/saat (UTC), sayfalama/sıralama/filtreleme sözleşmeleri, `Idempotency-Key` (POST için opsiyonel).
+
+### 5) Veri Modeli ve DB Pratikleri
+
+* **İsimlendirme**: şema/tablo/sütun konvansiyonları (snake\_case), zorunlu **index** kuralları.
+* **Audit alanları**: `created_at`, `updated_at`, (ops.) `created_by`, `updated_by`.
+* **Bütünlük**: `NOT NULL`, `CHECK`, `FK` kısıtları; **optimistic locking** (JPA `@Version`).
+* **Performans**: slow query log izlemesi, explain plan gözden geçirme rehberi.
+
+### 6) Test Stratejisi
+
+* **Unit**: JUnit5 + Mockito.
+* **Integration**: Testcontainers Postgres + Flyway migrate.
+* **Contract/E2E**: Tüketici-sunucu sözleşmeleri (ops.) ve basit smoke testler.
+* **Test verisi**: Builder pattern veya `data.sql` seed (yalnızca testte).
+
+### 7) Gözlemlenebilirlik (Observability)
+
+* **Actuator**: health/metrics/info; prod’da **readiness/liveness** ekleri.
+* **Micrometer**: Prometheus endpoint; (ops.) Grafana dashboard’ları.
+* **Loglama**: JSON logging (prod), **correlation id** (MDC) ve istek/yanıt izleme filtresi.
+
+### 8) Güvenlik
+
+* **Spring Security**: temel güvenlik, (ops.) JWT/OAuth2.
+* **CORS** politikası.
+* **Rate limiting** (ops.: Bucket4j/Gateway).
+* **Girdi doğrulama**: `@Valid` + merkezi hata yönetimi.
+
+### 9) Sürümleme ve Yayınlama
+
+* **Semantic Versioning**: `v1.2.3` tag’leri.
+* **Changelog** üretimi (Release Drafter).
+* **Ortamlar**: staging → prod tanımı; **rollback** prosedürü (DB backup + Flyway stratejisi).
+
+### 10) Yakın Vadeli Backlog (Önerilen PR Sırası)
+
+* [ ] `springdoc-openapi` bağımlılığını ekle → `/swagger-ui.html` aç.
+* [ ] **Dockerfile** (multi-stage) ve `compose`’a **app** servisi.
+* [ ] **GitHub Actions CI**: build + test + (ops.) image build.
+* [ ] **Spotless + Checkstyle** ayarları ve ilk düzeltmeler.
+* [ ] **ControllerAdvice** ile RFC7807 problem detayları.
+* [ ] **Testcontainers** ile örnek entegrasyon testi.
+* [ ] **JSON log** & correlation-id filtresi.
+* [ ] **Staging** compose/profil kurgusu ve basit release döngüsü.
+
+
