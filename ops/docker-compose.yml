@@ -16,5 +16,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  flyway:
+    image: flyway/flyway:10
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ../src/main/resources/db/migration:/flyway/sql
+    command: >
+      -url=jdbc:postgresql://db:5432/${PGDATABASE}
+      -user=${FLYWAY_USER}
+      -password=${FLYWAY_PASSWORD}
+      -schemas=${PGSCHEMA}
+      -defaultSchema=${PGSCHEMA}
+      -connectRetries=60
+      migrate
+
 volumes:
   pgdata:
