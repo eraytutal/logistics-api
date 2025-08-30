@@ -1,0 +1,20 @@
+name: logistics
+services:
+  db:
+    image: postgres:17
+    container_name: logistics-db
+    ports: ["55432:5432"]               # host:container
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  pgdata:
