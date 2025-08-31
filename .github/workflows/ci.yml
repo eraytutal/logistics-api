@@ -2,13 +2,18 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,9 +21,14 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Make mvnw executable
+        run: chmod +x mvnw
 
       - name: Build (skip tests)
         run: ./mvnw -B -DskipTests verify
+        # Testleri de çalıştırmak istediğinde yukarıdaki satır yerine şunu kullan:
+        # run: ./mvnw -B verify
