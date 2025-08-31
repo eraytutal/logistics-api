@@ -1,4 +1,5 @@
 # Logistics API — Geliştirici Rehberi (Docker + Flyway + Spring Boot)
+![CI](https://github.com/eraytutal/logistics-api/actions/workflows/ci.yml/badge.svg)
 
 Bu repo, **Docker’lı PostgreSQL**, **Flyway migration’ları** ve **Spring Boot** ile lokal geliştirme için hazır bir iskelet sunar. Amaç: ekibe yeni katılan biri **tek seferde** ortamını kurup projeyi çalıştırabilsin.
 
